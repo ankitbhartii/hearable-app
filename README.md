@@ -41,5 +41,5 @@ To spin up Hearable on your local machine, run the following sequence:
 
 ### 1. Initialize Repository
 ```bash
-git clone https://github.com/ankitbhartii/hearable-app.git
+git clone [https://github.com/ankitbhartii/hearable-app.git](https://github.com/ankitbhartii/hearable-app.git)
 cd hearable-app
