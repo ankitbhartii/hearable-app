@@ -1,192 +1,188 @@
-'use client'
+"use client";
 
-import { useState } from 'react'
-import { createClient } from '../utils/supabase/client'
-import { useRouter } from 'next/navigation'
-import { Headphones, ArrowRight, Eye, EyeOff } from 'lucide-react'
+import Link from "next/link";
+import { useState } from "react";
+import { useRouter } from "next/navigation";
+import { motion } from "framer-motion";
+import { createClient } from "../utils/supabase/client";
 
 export default function AuthPage() {
-  const supabase = createClient()
-  const router = useRouter()
+  const router = useRouter();
+  const supabase = createClient();
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [error, setError] = useState(null);
 
-  // Mode and Data States
-  const [isSignUp, setIsSignUp] = useState(false)
-  const [email, setEmail] = useState('')
-  const [password, setPassword] = useState('')
-  const [showPassword, setShowPassword] = useState(false)
-  
-  // Status States
-  const [loading, setLoading] = useState(false)
-  const [message, setMessage] = useState(null)
-  const [isError, setIsError] = useState(false)
-
-  // Auth Submission Pipeline
-  const handleAuth = async (e) => {
-    e.preventDefault()
-    setLoading(true)
-    setMessage(null)
-    setIsError(false)
-
-    try {
-      if (isSignUp) {
-        const { data, error } = await supabase.auth.signUp({
-          email,
-          password,
-          options: {
-            emailRedirectTo: `${window.location.origin}/auth/callback`,
-          },
-        })
-        if (error) throw error
-        setMessage('REGISTRATION SUCCESSFUL. CHECK YOUR EMAIL FOR Verification LINK.')
-      } else {
-        const { error } = await supabase.auth.signInWithPassword({
-          email,
-          password,
-        })
-        if (error) throw error
-        router.push('/dashboard')
-        router.refresh()
-      }
-    } catch (error) {
-      console.error('Authentication gate break:', error)
-      setIsError(true)
-      setMessage(error.message?.toUpperCase() || 'AUTHENTICATION ERROR.')
-    } finally {
-      setLoading(false)
+  const handleLogin = async (e) => {
+    e.preventDefault();
+    setError(null);
+    const { error } = await supabase.auth.signInWithPassword({ email, password });
+    if (error) {
+      setError(error.message);
+    } else {
+      router.push("/dashboard");
     }
-  }
+  };
+
+  // Content fade-in animation using your custom cubic bezier curves
+  const contentVariants = {
+    hidden: { opacity: 0, x: 30 },
+    visible: {
+      opacity: 1,
+      x: 0,
+      transition: { ease: [0.16, 1, 0.3, 1], duration: 0.8, delay: 0.2 },
+    },
+  };
+
+  // Core background light line loops
+  const lineLoopVariants = (duration, delay, yPos) => ({
+    animate: {
+      x: ["-100%", "100%"],
+      opacity: [0, 1, 1, 0],
+      transition: {
+        duration: duration,
+        delay: delay,
+        repeat: Infinity,
+        ease: "linear",
+      },
+    },
+  });
 
   return (
-    <div className="min-h-screen bg-[#FEBB0F] text-[#050404] font-['Hanken_Grotesk'] antialiased flex flex-col md:flex-row select-none overflow-x-hidden">
-      
-      {/* Google Web Font Injector */}
+    <div className="min-h-screen bg-[#050404] flex flex-col md:flex-row font-['Hanken_Grotesk'] selection:bg-[#E50914] selection:text-white overflow-hidden relative">
       <style jsx global>{`
-        @import url('https://fonts.googleapis.com/css2?family=Anton&family=Hanken+Grotesk:wght@500;700;800;900&display=swap');
+        @import url('https://fonts.googleapis.com/css2?family=Anton&family=Hanken+Grotesk:wght@500;700;900&display=swap');
       `}</style>
 
-      {/* Left Column: Massive Editorial Branding Poster Panel */}
-      <div className="w-full md:w-[55%] bg-[#050404] text-white p-8 md:p-16 flex flex-col justify-between border-b-8 md:border-b-0 md:border-r-8 border-[#050404] relative overflow-hidden">
-        {/* Background Raw Abstract Tonal Block */}
-        <div className="absolute -bottom-10 -left-10 w-96 h-96 bg-[#B70504] rounded-none rotate-12 opacity-40 pointer-events-none" />
+      {/* ================= LEFT SIDE: CINEMATIC AMBIENT LOOPER ================= */}
+      <div className="w-full md:w-1/2 bg-black relative overflow-hidden flex flex-col justify-between p-12 lg:p-20 border-b md:border-b-0 md:border-r border-white/5">
         
-        <div className="flex items-center gap-2 z-10">
-          <Headphones className="h-8 w-8 text-[#FEBB0F] stroke-[3]" />
-          <span className="font-['Anton'] text-3xl uppercase tracking-wider text-white">HEARABLE</span>
+        {/* Continuous Streaming Ambient Light Streaks */}
+        <div className="absolute inset-0 w-full h-full pointer-events-none opacity-40">
+          {[
+            { d: 4, delay: 0, y: "30%", h: "2px", rot: -12, bg: "linear-gradient(90deg, transparent, #E50914, transparent)" },
+            { d: 5, delay: 1.5, y: "55%", h: "3px", rot: 6, bg: "linear-gradient(90deg, transparent, #FF3E4D, transparent)" },
+            { d: 3.5, delay: 0.8, y: "42%", h: "1.5px", rot: -3, bg: "linear-gradient(90deg, transparent, #B81D24, transparent)" },
+            { d: 6, delay: 2.2, y: "70%", h: "4px", rot: 15, bg: "linear-gradient(90deg, transparent, #E50914, transparent)" },
+          ].map((line, i) => (
+            <motion.div
+              key={i}
+              variants={lineLoopVariants(line.d, line.delay, line.y)}
+              animate="animate"
+              style={{
+                top: line.y,
+                height: line.h,
+                background: line.bg,
+                transformOrigin: "center",
+                boxShadow: "0 0 20px #E50914, 0 0 8px #B81D24",
+                rotateZ: line.rot,
+              }}
+              className="absolute w-[200%]"
+            />
+          ))}
+          {/* Radial ambient vignette to contain the line glow fields */}
+          <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,transparent_20%,#000000_90%)]" />
         </div>
 
-        <div className="my-auto pt-16 pb-8 space-y-4 z-10">
-          <h1 className="font-['Anton'] text-7xl lg:text-9xl uppercase tracking-tighter leading-[0.85] text-white">
-            SONIC<br />IMPACT
+        {/* Global Nav Branding Header */}
+        <div className="relative z-10 flex items-center gap-3">
+          <span className="text-[#E50914] text-4xl font-bold drop-shadow-[0_0_15px_rgba(229,9,20,0.5)]">🎧</span>
+          <span className="text-white font-['Anton'] text-3xl tracking-wider">HEARABLE</span>
+        </div>
+
+        {/* Hero Copy Presentation */}
+        <div className="relative z-10 mt-20 mb-auto">
+          <h1 className="font-['Anton'] text-[6rem] lg:text-[7.5rem] uppercase tracking-tighter text-white leading-[0.85] flex flex-col">
+            <span className="text-transparent bg-clip-text bg-gradient-to-r from-white via-white to-neutral-500">SONIC</span>
+            <span className="text-[#E50914] drop-shadow-[0_0_30px_rgba(229,9,20,0.3)]">IMPACT</span>
           </h1>
-          <p className="font-['Hanken_Grotesk'] font-extrabold text-lg lg:text-xl text-[#FEBB0F] uppercase tracking-wide max-w-md">
+          <p className="mt-8 font-bold text-sm text-neutral-400 uppercase tracking-widest max-w-sm leading-relaxed border-l-2 border-[#E50914] pl-4">
             Unapologetic layout constraints built explicitly for high-fidelity literary streaming.
           </p>
         </div>
 
-        <div className="font-mono text-xs text-zinc-500 uppercase tracking-widest z-10">
-          HEARABLE GATEWAY SYSTEM // VER v2.026
+        <div className="relative z-10 font-bold text-xs text-neutral-600 uppercase tracking-widest mt-12">
+          HEARABLE GATEWAY SYSTEM // VER V2.026
         </div>
       </div>
 
-      {/* Right Column: In-Your-Face Stark Form Workspace */}
-      <div className="w-full md:w-[45%] bg-[#f9f9f9] p-8 md:p-16 flex flex-col justify-center relative">
-        
-        <div className="w-full max-w-md mx-auto space-y-8">
-          
-          {/* Form Header Segment */}
-          <div className="space-y-2 border-b-4 border-[#050404] pb-4 relative">
-            <h2 className="font-['Anton'] text-5xl uppercase tracking-tight text-[#050404] leading-none">
-              {isSignUp ? 'CREATE ACCOUNT' : 'USER ACCESS'}
-            </h2>
-            <p className="font-['Hanken_Grotesk'] font-extrabold text-xs text-zinc-500 uppercase tracking-widest">
-              {isSignUp ? 'Register credentials to build your workspace library' : 'Sign in to access your secure audiobook shelves'}
+      {/* ================= RIGHT SIDE: INDUSTRIAL ACCESS CONTROLS ================= */}
+      <motion.div 
+        variants={contentVariants}
+        initial="hidden"
+        visible="visible"
+        animate="visible"
+        className="w-full md:w-1/2 bg-[#050404] flex flex-col justify-center p-12 lg:p-24 relative z-10"
+      >
+        <div className="max-w-md w-full mx-auto">
+          <h2 className="font-['Anton'] text-6xl uppercase tracking-tighter text-white leading-none mb-2">
+            USER ACCESS
+          </h2>
+          <div className="flex justify-between items-center border-b-2 border-neutral-800 pb-4 mb-10">
+            <p className="font-bold text-[10px] sm:text-xs text-neutral-500 uppercase tracking-widest">
+              SIGN IN TO ACCESS YOUR SECURE AUDIOBOOK SHELVES
             </p>
-            <span className="absolute bottom-1 right-0 font-mono text-xs font-black text-[#B70504]">
-              {isSignUp ? '[REG_02]' : '[AUTH_01]'}
-            </span>
+            <span className="font-bold text-xs text-[#E50914] ml-2 tracking-wider">[AUTH_01]</span>
           </div>
 
-          {/* Dynamic Banner Notification Alerts */}
-          {message && (
-            <div className={`p-4 border-4 border-[#050404] text-xs font-black uppercase tracking-wider rounded-[0.125rem] ${
-              isError ? 'bg-[#B70504] text-white' : 'bg-[#FEBB0F] text-[#050404]'
-            }`}>
-              {message}
-            </div>
-          )}
-
-          {/* Input Submission Terminal Form */}
-          <form onSubmit={handleAuth} className="space-y-6">
+          <form onSubmit={handleLogin} className="space-y-6">
+            {error && (
+              <p className="text-white font-bold text-sm bg-[#E50914]/20 p-4 uppercase border-l-4 border-[#E50914] tracking-wide">
+                {error}
+              </p>
+            )}
             
-            {/* Email Input Field Box */}
             <div className="space-y-2">
-              <label className="block font-['Hanken_Grotesk'] font-black text-xs uppercase tracking-widest text-[#050404]">
-                Email Address Field
+              <label htmlFor="email" className="font-bold text-xs text-neutral-400 uppercase tracking-widest">
+                EMAIL ADDRESS FIELD
               </label>
-              <input 
+              <input
+                id="email"
                 type="email"
-                required
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 placeholder="YOUR.NAME@EMAIL.COM"
-                className="w-full bg-[#f3f3f4] border-4 border-[#050404] px-4 py-3 font-['Hanken_Grotesk'] font-bold text-[#050404] placeholder-zinc-400 outline-none focus:bg-white rounded-[0.25rem] transition-colors"
+                className="w-full p-4 border-2 border-neutral-800 bg-black text-white font-bold placeholder-neutral-700 focus:outline-none focus:ring-0 focus:border-[#E50914] transition-colors rounded-none"
+                required
               />
             </div>
 
-            {/* Password Input Field Box */}
             <div className="space-y-2">
-              <label className="block font-['Hanken_Grotesk'] font-black text-xs uppercase tracking-widest text-[#050404]">
-                Secure Code Password
+              <label htmlFor="password" className="font-bold text-xs text-neutral-400 uppercase tracking-widest">
+                SECURE CODE PASSWORD
               </label>
-              <div className="relative w-full">
-                <input 
-                  type={showPassword ? 'text' : 'password'}
-                  required
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  placeholder="••••••••••••"
-                  className="w-full bg-[#f3f3f4] border-4 border-[#050404] pl-4 pr-12 py-3 font-['Hanken_Grotesk'] font-bold text-[#050404] placeholder-zinc-400 outline-none focus:bg-white rounded-[0.25rem] transition-colors"
-                />
-                <button
-                  type="button"
-                  onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-4 top-1/2 -translate-y-1/2 text-zinc-500 hover:text-[#050404] p-1"
-                >
-                  {showPassword ? <EyeOff className="w-5 h-5 stroke-[2.5]" /> : <Eye className="w-5 h-5 stroke-[2.5]" />}
-                </button>
-              </div>
+              <input
+                id="password"
+                type="password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                placeholder="••••••••••••"
+                className="w-full p-4 border-2 border-neutral-800 bg-black text-white font-bold placeholder-neutral-700 focus:outline-none focus:ring-0 focus:border-[#E50914] transition-colors rounded-none"
+                required
+              />
             </div>
 
-            {/* In-Your-Face Flat Submission Block Button */}
+            {/* Custom Netflix Identity Action Trigger */}
             <button
               type="submit"
-              disabled={loading}
-              className="w-full bg-[#050404] text-white border-4 border-[#050404] font-['Hanken_Grotesk'] font-black text-sm uppercase tracking-widest py-4 rounded-[0.25rem] flex items-center justify-center gap-2 transition-colors hover:bg-[#B70504] hover:border-[#B70504] disabled:opacity-50"
+              className="group relative w-full bg-[#E50914] text-white font-['Anton'] text-2xl py-5 mt-6 overflow-hidden transition-transform active:scale-[0.98]"
             >
-              <span>{loading ? 'PROCESSING STREAM...' : isSignUp ? 'EXECUTE REGISTER' : 'AUTHORIZE LOGIN'}</span>
-              {!loading && <ArrowRight className="w-4 h-4 stroke-[3]" />}
+              <span className="relative z-10 flex items-center justify-center gap-2 group-hover:-translate-y-[150%] transition-transform duration-500 ease-[cubic-bezier(0.16,1,0.3,1)] tracking-wider">
+                AUTHORIZE LOGIN →
+              </span>
+              <span className="absolute inset-0 bg-white text-black flex items-center justify-center gap-2 z-10 translate-y-[150%] group-hover:translate-y-0 transition-transform duration-500 ease-[cubic-bezier(0.16,1,0.3,1)] tracking-wider">
+                AUTHORIZE LOGIN →
+              </span>
             </button>
-
           </form>
 
-          {/* Flat Mode Toggle Bridge Link */}
-          <div className="pt-4 border-t border-[#eeeeee] text-center">
-            <button
-              type="button"
-              onClick={() => {
-                setIsSignUp(!isSignUp)
-                setMessage(null)
-              }}
-              className="font-['Hanken_Grotesk'] font-extrabold text-sm uppercase tracking-wide text-[#B70504] hover:text-[#050404] border-b-2 border-transparent hover:border-[#050404] pb-0.5 transition-all"
-            >
-              {isSignUp ? 'Already registered? Log in here' : "Don't have an account? Create one"}
-            </button>
+          <div className="mt-10 text-center border-t border-neutral-900 pt-8">
+            <Link href="/register" className="font-bold text-sm text-neutral-500 uppercase tracking-widest hover:text-[#E50914] transition-colors">
+              DON'T HAVE AN ACCOUNT? <span className="text-white underline decoration-[#E50914] underline-offset-4 ml-1">CREATE ONE</span>
+            </Link>
           </div>
-
         </div>
-
-      </div>
-
+      </motion.div>
     </div>
-  )
+  );
 }

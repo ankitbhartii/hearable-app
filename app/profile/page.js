@@ -3,7 +3,8 @@
 import { useState, useEffect } from 'react'
 import { createClient } from '../utils/supabase/client'
 import { useRouter } from 'next/navigation'
-import { LayoutDashboard, User, UploadCloud, Save } from 'lucide-react'
+import { LayoutDashboard, User, UploadCloud, Save, ArrowLeft, Camera, FileText } from 'lucide-react'
+import { motion } from 'framer-motion'
 import Loader from '../Loader'
 
 export default function ProfileDashboard() {
@@ -94,7 +95,7 @@ export default function ProfileDashboard() {
         imgFormData.append('api_key', imgSignData.apiKey)
         imgFormData.append('timestamp', imgSignData.timestamp)
         imgFormData.append('signature', imgSignData.signature)
-        imgFormData.append('folder', 'avatars') // Dedicated folder for users
+        imgFormData.append('folder', 'avatars')
 
         const imgUploadRes = await fetch(`https://api.cloudinary.com/v1_1/${imgSignData.cloudName}/image/upload`, {
           method: 'POST',
@@ -121,7 +122,7 @@ export default function ProfileDashboard() {
       if (dbError) throw dbError
 
       setAvatarUrl(finalAvatarUrl)
-      setAvatarFile(null) // Clear file state after successful upload
+      setAvatarFile(null)
       setIsError(false)
       setStatusMessage('SUCCESS: USER IDENTITY UPDATED.')
 
@@ -134,44 +135,52 @@ export default function ProfileDashboard() {
     }
   }
 
-  if (loading) return <div className="min-h-screen bg-[#f9f9f9] flex items-center justify-center p-6"><Loader /></div>
+  if (loading) return <div className="min-h-screen bg-[#141414] flex items-center justify-center p-6"><Loader /></div>
 
   return (
-    <div className="min-h-screen bg-[#f9f9f9] text-[#050404] font-['Hanken_Grotesk'] antialiased pb-24 select-none">
+    <div className="min-h-screen bg-[#141414] text-white font-['Hanken_Grotesk'] antialiased pb-24 select-none transition-colors duration-300">
       
-      {/* Top Stark Navigation Header Strip */}
-      <header className="border-b-4 border-[#050404] bg-[#FEBB0F] px-6 py-6 flex justify-between items-center sticky top-0 z-40">
-        <div className="flex items-center gap-3">
-          <h1 className="font-['Anton'] text-4xl uppercase tracking-tighter text-[#050404] leading-none">
-            USER_IDENTITY
-          </h1>
+      <style jsx global>{`
+        @import url('https://fonts.googleapis.com/css2?family=Anton&family=Hanken+Grotesk:wght@500;600;700;800;900&display=swap');
+      `}</style>
+
+      {/* ================= CINEMATIC BAR NAVIGATION ================= */}
+      <nav className="sticky top-0 z-50 bg-gradient-to-b from-black/90 to-transparent backdrop-blur-md px-6 md:px-12 py-5 flex justify-between items-center border-b border-white/5">
+        <div className="flex items-center gap-2 select-none">
+          <span className="text-[#e50914] text-3xl font-bold drop-shadow-[0_0_12px_rgba(229,9,20,0.4)]">🎧</span>
+          <span className="font-['Anton'] text-2xl tracking-wider text-white">USER_IDENTITY</span>
         </div>
-        
+
         <button 
           onClick={() => router.push('/dashboard')}
-          className="flex items-center gap-2 text-xs font-black uppercase tracking-widest bg-white border-4 border-[#050404] px-4 py-2.5 rounded-[0.125rem] hover:bg-[#050404] hover:text-white transition-colors"
+          className="flex items-center gap-2 text-xs font-bold uppercase tracking-widest px-5 py-3 border border-white/10 rounded-md hover:bg-white/5 transition-colors group"
         >
-          <LayoutDashboard className="h-4 w-4 stroke-[3]" />
-          Return to Dashboard
+          <ArrowLeft className="w-4 h-4 group-hover:-translate-x-0.5 transition-transform" />
+          <span>Return to Dashboard</span>
         </button>
-      </header>
+      </nav>
 
-      {/* Main Form Content Layout Area */}
-      <main className="max-w-2xl mx-auto px-6 py-12">
+      {/* ================= MAIN PROFILE EDITOR CONTAINER ================= */}
+      <main className="max-w-3xl mx-auto px-6 py-12 relative z-10">
         
-        <div className="bg-white border-4 border-[#050404] p-6 md:p-10 rounded-[0.25rem] space-y-8 shadow-[8px_8px_0px_0px_rgba(5,4,4,1)]">
-          
-          <div className="border-b-4 border-[#050404] pb-3 flex items-center gap-2">
-            <User className="h-8 w-8 text-[#B70504] stroke-[3]" />
-            <h2 className="font-['Anton'] text-3xl uppercase tracking-tight text-[#050404] leading-none">
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ ease: [0.16, 1, 0.3, 1], duration: 0.8 }}
+          className="bg-[#181818]/60 border border-white/10 p-8 md:p-12 rounded-2xl backdrop-blur-md shadow-2xl space-y-10"
+        >
+          {/* Header Title Section */}
+          <div className="border-b border-white/10 pb-6 flex items-center gap-3">
+            <User className="text-[#e50914] w-6 h-6" />
+            <h2 className="font-['Anton'] text-3xl md:text-4xl uppercase tracking-wider text-white leading-none">
               Customize Profile
             </h2>
           </div>
 
           {/* Dynamic Action Response Banner */}
           {statusMessage && (
-            <div className={`p-4 border-4 border-[#050404] text-xs font-black uppercase tracking-wider rounded-[0.125rem] whitespace-normal break-words ${
-              isError ? 'bg-[#B70504] text-white' : 'bg-[#050404] text-white'
+            <div className={`p-4 border-l-4 text-xs font-bold uppercase tracking-wider rounded-r-md shadow-md transition-all ${
+              isError ? 'bg-[#e50914]/20 border-[#e50914] text-white' : 'bg-white/5 border-neutral-500 text-neutral-300'
             }`}>
               {statusMessage}
             </div>
@@ -179,20 +188,23 @@ export default function ProfileDashboard() {
 
           <form onSubmit={handleSaveProfile} className="space-y-8">
             
-            {/* Avatar Upload Section */}
-            <div className="flex flex-col md:flex-row gap-8 items-center md:items-start pb-6 border-b-4 border-dashed border-[#050404]">
-              
-              {/* Massive Avatar Preview Frame */}
-              <div className="relative h-40 w-40 flex-shrink-0 bg-[#f3f3f4] border-[6px] border-[#050404] overflow-hidden rounded-[0.5rem] flex items-center justify-center group">
+            {/* AVATAR IMAGE FRAME UPLOADER */}
+            <div className="flex flex-col sm:flex-row items-center gap-8 bg-black/30 p-6 rounded-xl border border-white/5">
+              <div className="relative group w-32 h-32 flex-shrink-0 rounded-xl overflow-hidden bg-neutral-900 border border-white/10 flex items-center justify-center cursor-pointer">
                 {avatarPreview ? (
-                  <img src={avatarPreview} alt="Avatar" className="w-full h-full object-cover" />
+                  <img src={avatarPreview} alt="Avatar" className="w-full h-full object-cover transition-opacity group-hover:opacity-70" />
                 ) : (
-                  <User className="h-16 w-16 text-zinc-300" />
+                  <div className="text-neutral-600 group-hover:text-neutral-400 transition-colors">
+                    <User className="w-12 h-12 stroke-[1.5]" />
+                  </div>
                 )}
-                <div className="absolute inset-0 bg-[#B70504]/80 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col items-center justify-center text-white pointer-events-none">
-                  <UploadCloud className="h-8 w-8 mb-1" />
-                  <span className="text-[10px] font-black tracking-widest uppercase">Replace</span>
+                
+                {/* Micro-interaction Hover Shutter Overlay */}
+                <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity duration-200 flex flex-col items-center justify-center gap-1">
+                  <Camera className="w-5 h-5 text-white" />
+                  <span className="text-[10px] font-bold uppercase tracking-wider text-neutral-300">Upload</span>
                 </div>
+                
                 <input 
                   type="file" 
                   accept="image/*"
@@ -201,56 +213,58 @@ export default function ProfileDashboard() {
                 />
               </div>
 
-              <div className="space-y-2 w-full text-center md:text-left">
-                <h3 className="font-black text-sm uppercase tracking-widest text-[#050404]">Public Avatar</h3>
-                <p className="text-xs font-bold text-zinc-500 uppercase tracking-wide">
-                  Click the frame to upload a custom image. Files are securely processed through Cloudinary's global CDN.
+              <div className="space-y-2 text-center sm:text-left">
+                <h4 className="font-bold text-sm tracking-wide text-neutral-200 uppercase">Public Avatar Display</h4>
+                <p className="text-xs text-neutral-500 max-w-sm leading-relaxed">
+                  Click the viewport frame to select a custom image square. Files are safely managed and deployed through Cloudinary's global CDN.
                 </p>
               </div>
             </div>
 
-            {/* User Data Fields */}
-            <div className="space-y-6">
-              <div className="space-y-2">
-                <label className="block font-black text-xs uppercase tracking-widest text-[#050404]">
-                  Display Username
-                </label>
-                <input 
-                  type="text" 
-                  value={username} 
-                  onChange={(e) => setUsername(e.target.value)}
-                  placeholder="E.G., ECHO_READER_99"
-                  className="w-full bg-[#f3f3f4] border-4 border-[#050404] px-4 py-3 font-bold text-[#050404] outline-none focus:bg-white rounded-[0.25rem] transition-colors"
-                />
-              </div>
-
-              <div className="space-y-2">
-                <label className="block font-black text-xs uppercase tracking-widest text-[#050404]">
-                  Personal Bio / Signature
-                </label>
-                <textarea 
-                  rows="3" 
-                  value={bio} 
-                  onChange={(e) => setBio(e.target.value)}
-                  placeholder="TELL THE COMMUNITY ABOUT YOURSELF..."
-                  className="w-full bg-[#f3f3f4] border-4 border-[#050404] px-4 py-3 font-bold text-[#050404] outline-none focus:bg-white rounded-[0.25rem] resize-none transition-colors"
-                />
-              </div>
+            {/* INPUT FIELD: USERNAME */}
+            <div className="space-y-3">
+              <label className="flex items-center gap-2 font-bold text-xs text-neutral-400 uppercase tracking-widest">
+                <span>Display Username</span>
+              </label>
+              <input
+                type="text"
+                value={username}
+                onChange={(e) => setUsername(e.target.value)}
+                placeholder="E.G., ECHO_READER_99"
+                className="w-full bg-black/40 text-white placeholder-neutral-700 font-bold p-4 border-2 border-neutral-800 rounded-xl focus:outline-none focus:ring-0 focus:border-[#e50914] focus:bg-black transition-all uppercase tracking-wide text-sm"
+              />
             </div>
 
-            {/* Hard-Impact Submit Button */}
-            <button
-              type="submit"
-              disabled={saving}
-              className="w-full bg-[#050404] hover:bg-[#B70504] text-white border-4 border-[#050404] font-['Hanken_Grotesk'] font-black text-sm uppercase tracking-widest py-4 rounded-[0.25rem] flex items-center justify-center gap-3 transition-colors disabled:opacity-40"
-            >
-              <Save className="h-5 w-5 stroke-[3]" />
-              <span>{saving ? 'UPDATING SYSTEMS...' : 'Save Profile Identity'}</span>
-            </button>
+            {/* INPUT FIELD: BIO SIGNATURE */}
+            <div className="space-y-3">
+              <label className="flex items-center gap-2 font-bold text-xs text-neutral-400 uppercase tracking-widest">
+                <FileText className="w-3.5 h-3.5 text-neutral-500" />
+                <span>Personal Bio / Signature</span>
+              </label>
+              <textarea
+                rows={4}
+                value={bio}
+                onChange={(e) => setBio(e.target.value)}
+                placeholder="TELL THE COMMUNITY ABOUT YOURSELF..."
+                className="w-full bg-black/40 text-white placeholder-neutral-700 font-bold p-4 border-2 border-neutral-800 rounded-xl focus:outline-none focus:ring-0 focus:border-[#e50914] focus:bg-black transition-all uppercase tracking-wide text-sm resize-none min-h-[120px]"
+              />
+            </div>
+
+            {/* FORM SUBMISSION CONTROLS */}
+            <div className="pt-4 border-t border-white/5 flex justify-end">
+              <button
+                type="submit"
+                disabled={saving}
+                className="bg-[#e50914] hover:bg-[#b81d24] text-white font-['Anton'] text-xl uppercase tracking-wider px-8 py-4 rounded-md transition-all hover:scale-[1.02] active:scale-95 disabled:opacity-50 min-w-[200px] flex items-center justify-center gap-2 shadow-[0_4px_20px_rgba(229,9,20,0.25)]"
+              >
+                <Save className="w-4 h-4" />
+                <span>{saving ? "Updating Identity..." : "Save Profile Identity"}</span>
+              </button>
+            </div>
 
           </form>
-
-        </div>
+        </motion.div>
+        
       </main>
     </div>
   )

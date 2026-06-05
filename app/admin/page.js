@@ -3,18 +3,19 @@
 import { useState, useEffect } from 'react'
 import { createClient } from '../utils/supabase/client'
 import { useRouter } from 'next/navigation'
-import { LayoutDashboard, PlusCircle, UploadCloud, ImageIcon } from 'lucide-react'
+import { LayoutDashboard, PlusCircle, UploadCloud, ImageIcon, Film, Type, User, Mic, Clock, FileText } from 'lucide-react'
+import { motion } from 'framer-motion'
 
 export default function AdminConsole() {
   const supabase = createClient()
   const router = useRouter()
 
-  // Form State Definitions
+  // Form State Definitions (Defaults cleanly to 'fantasy')
   const [title, setTitle] = useState('')
   const [author, setAuthor] = useState('')
   const [narrator, setNarrator] = useState('')
   const [duration, setDuration] = useState('')
-  const [genreSlug, setGenreSlug] = useState('sci-fi-fantasy')
+  const [genreSlug, setGenreSlug] = useState('fantasy')
   const [description, setDescription] = useState('')
   
   // Physical File States
@@ -107,7 +108,6 @@ export default function AdminConsole() {
         imgFormData.append('signature', imgSignData.signature)
         imgFormData.append('folder', 'audiobooks')
 
-        // Note: Images go to /image/upload
         const imgUploadRes = await fetch(`https://api.cloudinary.com/v1_1/${imgSignData.cloudName}/image/upload`, {
           method: 'POST',
           body: imgFormData
@@ -135,7 +135,6 @@ export default function AdminConsole() {
       
       const cloudinaryResponse = await new Promise((resolve, reject) => {
         const xhr = new XMLHttpRequest()
-        // Note: Audio goes to /video/upload in Cloudinary REST API
         const uploadUrl = `https://api.cloudinary.com/v1_1/${audioSignData.cloudName}/video/upload`
         
         xhr.open('POST', uploadUrl, true)
@@ -144,7 +143,7 @@ export default function AdminConsole() {
           if (event.lengthComputable) {
             const percentage = Math.round((event.loaded / event.total) * 100)
             setUploadProgress(percentage)
-            setUploadStatusString(`CLOUDINARY AUDIO STREAMING: ${percentage}% COMPLETED`)
+            setUploadStatusString('CLOUDINARY AUDIO STREAMING: ' + percentage + '% COMPLETED')
           }
         }
 
@@ -152,7 +151,7 @@ export default function AdminConsole() {
           if (xhr.status === 200) {
             resolve(JSON.parse(xhr.responseText))
           } else {
-            reject(new Error(`Cloudinary rejected stream with status: ${xhr.status}`))
+            reject(new Error('Cloudinary rejected stream with status: ' + xhr.status))
           }
         }
         
@@ -168,7 +167,7 @@ export default function AdminConsole() {
         title: title.trim(),
         author: author.trim(),
         narrator: narrator.trim() || null,
-        cover_url: finalCoverUrl, // Now saving the secure Cloudinary image link!
+        cover_url: finalCoverUrl,
         audio_url: finalAudioUrl, 
         duration: duration.trim() || null,
         genre_slug: genreSlug,
@@ -197,7 +196,7 @@ export default function AdminConsole() {
       console.warn('Pipeline fault:', err)
       setIsError(true)
       const safeErrorText = err?.message || err?.details || String(err)
-      setStatusMessage(`REJECTION: ${safeErrorText.toUpperCase()}`)
+      setStatusMessage('REJECTION: ' + safeErrorText.toUpperCase())
     } finally {
       setPublishing(false)
       setUploadStatusString('')
@@ -205,166 +204,228 @@ export default function AdminConsole() {
   }
 
   return (
-    <div className="min-h-screen bg-[#f9f9f9] text-[#050404] font-['Hanken_Grotesk'] antialiased pb-24 select-none">
+    <div className="min-h-screen bg-[#141414] text-white font-['Hanken_Grotesk'] antialiased pb-24 select-none transition-colors duration-300">
       
       <style jsx global>{`
-        @import url('https://fonts.googleapis.com/css2?family=Anton&family=Hanken+Grotesk:wght@500;700;800;900&display=swap');
+        @import url('https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@400;500;600;700;800;900&display=swap');
       `}</style>
 
-      {/* Top Stark Navigation Header Strip */}
-      <header className="border-b-4 border-[#050404] bg-[#FEBB0F] px-6 py-6 flex justify-between items-center sticky top-0 z-40">
-        <div className="flex items-center gap-3">
-          <h1 className="font-['Anton'] text-4xl uppercase tracking-tighter text-[#050404] leading-none">
-            DEV_CONTROL_PANEL
-          </h1>
-          <span className="font-mono text-xs font-black bg-[#050404] text-white px-2 py-0.5 rounded-[0.125rem]">
-            V2.026
-          </span>
+      {/* ================= BRANDING NAVIGATION HEADER ================= */}
+      <header className="bg-gradient-to-b from-black to-transparent backdrop-blur-md px-6 md:px-12 py-5 flex justify-between items-center sticky top-0 z-40 border-b border-white/5">
+        <div className="flex items-center gap-2 select-none">
+          <span className="text-[#e50914] text-3xl font-bold drop-shadow-[0_0_12px_rgba(229,9,20,0.4)]">🎧</span>
+          <span className="text-xl md:text-2xl font-[900] tracking-tighter text-white antialiased">DEV_CONTROL_PANEL</span>
+          <span className="bg-[#e50914] text-white text-[8px] font-[900] px-1.5 py-0.5 rounded-sm ml-2 tracking-widest uppercase">V2.026</span>
         </div>
         
         <button 
           onClick={() => router.push('/dashboard')}
-          className="flex items-center gap-2 text-xs font-black uppercase tracking-widest bg-white border-4 border-[#050404] px-4 py-2.5 rounded-[0.125rem] hover:bg-[#050404] hover:text-white transition-colors"
+          className="flex items-center gap-2 text-xs font-bold uppercase tracking-widest px-5 py-3 border border-white/10 rounded-md hover:bg-white/5 transition-colors group"
         >
-          <LayoutDashboard className="h-4 w-4 stroke-[3]" />
-          Return to Dashboard
+          <LayoutDashboard className="h-4 w-4 group-hover:-translate-x-0.5 transition-transform" />
+          <span>Return to Dashboard</span>
         </button>
       </header>
 
-      {/* Main Form Content Layout Area */}
-      <main className="max-w-3xl mx-auto px-6 py-12">
+      {/* ================= FORM BODY PANELS ================= */}
+      <main className="max-w-4xl mx-auto px-6 py-12 relative z-10">
         
-        <div className="bg-white border-4 border-[#050404] p-6 md:p-10 rounded-[0.25rem] space-y-8">
+        <motion.div
+          initial={{ opacity: 0, scale: 0.98 }}
+          animate={{ opacity: 1, scale: 1 }}
+          transition={{ ease: [0.16, 1, 0.3, 1], duration: 0.8 }}
+          className="bg-[#181818]/60 border border-white/10 p-8 md:p-12 rounded-2xl backdrop-blur-md shadow-2xl space-y-10"
+        >
           
-          <div className="border-b-4 border-[#050404] pb-3 flex items-center gap-2">
-            <PlusCircle className="h-6 w-6 text-[#B70504] stroke-[3]" />
-            <h2 className="font-['Anton'] text-3xl uppercase tracking-tight text-[#050404] leading-none">
+          <div className="border-b border-white/10 pb-6 flex items-center gap-3">
+            <PlusCircle className="h-6 w-6 text-[#e50914]" />
+            <h2 className="text-xl md:text-2xl font-bold tracking-tight text-white uppercase antialiased">
               Upload Audio & Art to Cloudinary
             </h2>
           </div>
 
           {/* Dynamic Action Response Banner */}
           {statusMessage && (
-            <div className={`p-4 border-4 border-[#050404] text-xs font-black uppercase tracking-wider rounded-[0.125rem] whitespace-normal break-words ${
-              isError ? 'bg-[#B70504] text-white' : 'bg-[#FEBB0F] text-[#050404]'
+            <div className={`p-4 border-l-4 text-xs font-bold uppercase tracking-wider rounded-r-md shadow-md transition-all ${
+              isError ? 'bg-[#e50914]/20 border-[#e50914] text-white' : 'bg-white/5 border-neutral-500 text-neutral-300'
             }`}>
               {statusMessage}
             </div>
           )}
 
-          {/* Visual Percentage Progress Bar Module */}
+          {/* Progress Slider Track Module */}
           {publishing && uploadProgress > 0 && (
-            <div className="border-4 border-[#050404] bg-[#050404] p-4 rounded-[0.25rem] space-y-3">
-              <div className="flex justify-between items-center text-xs font-mono font-black text-[#FEBB0F] uppercase tracking-widest">
+            <div className="border border-white/10 bg-black/40 p-5 rounded-xl space-y-3 shadow-xl">
+              <div className="flex justify-between items-center text-xs font-mono font-bold text-[#e50914] uppercase tracking-widest">
                 <span>{uploadStatusString}</span>
                 <span>[{uploadProgress}%]</span>
               </div>
-              <div className="w-full h-4 bg-zinc-800 border-2 border-white overflow-hidden relative rounded-[0.125rem]">
+              <div className="w-full h-2 bg-neutral-900 overflow-hidden relative rounded-full">
                 <div 
-                  className="h-full bg-[#FEBB0F] transition-all duration-150 ease-out"
+                  className="h-full bg-[#e50914] transition-all duration-150 ease-out shadow-[0_0_10px_#e50914]"
                   style={{ width: `${uploadProgress}%` }}
                 />
               </div>
             </div>
           )}
 
-          {/* Form UI Layout Structure */}
-          <form onSubmit={handlePublish} className="space-y-6">
+          {/* Primary Input Fields Processing Package */}
+          <form onSubmit={handlePublish} className="space-y-8">
             
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div className="space-y-2">
-                <label className="block font-black text-xs uppercase tracking-widest text-[#050404]">Book Title Field *</label>
-                <input type="text" required value={title} onChange={(e) => setTitle(e.target.value)} placeholder="E.G., THE DIGITAL FRONTIER" className="w-full bg-[#f3f3f4] border-4 border-[#050404] px-4 py-3 font-bold text-[#050404] outline-none focus:bg-white rounded-[0.25rem] transition-colors" />
+                <label className="flex items-center gap-2 font-bold text-xs text-neutral-400 uppercase tracking-widest">
+                  <Type className="w-3.5 h-3.5 text-neutral-600" />
+                  <span>Book Title Field *</span>
+                </label>
+                <input type="text" required value={title} onChange={(e) => setTitle(e.target.value)} placeholder="E.G., THE DIGITAL FRONTIER" className="w-full bg-black/40 text-white placeholder-neutral-700 font-bold p-4 border-2 border-neutral-800 rounded-xl focus:outline-none focus:ring-0 focus:border-[#e50914] focus:bg-black transition-all uppercase tracking-wide text-sm" />
               </div>
 
               <div className="space-y-2">
-                <label className="block font-black text-xs uppercase tracking-widest text-[#050404]">Author Name Field *</label>
-                <input type="text" required value={author} onChange={(e) => setAuthor(e.target.value)} placeholder="E.G., ANKIT SINGH" className="w-full bg-[#f3f3f4] border-4 border-[#050404] px-4 py-3 font-bold text-[#050404] outline-none focus:bg-white rounded-[0.25rem] transition-colors" />
+                <label className="flex items-center gap-2 font-bold text-xs text-neutral-400 uppercase tracking-widest">
+                  <User className="w-3.5 h-3.5 text-neutral-600" />
+                  <span>Author Name Field *</span>
+                </label>
+                <input type="text" required value={author} onChange={(e) => setAuthor(e.target.value)} placeholder="E.G., ANKIT SINGH" className="w-full bg-black/40 text-white placeholder-neutral-700 font-bold p-4 border-2 border-neutral-800 rounded-xl focus:outline-none focus:ring-0 focus:border-[#e50914] focus:bg-black transition-all uppercase tracking-wide text-sm" />
               </div>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div className="space-y-2">
-                <label className="block font-black text-xs uppercase tracking-widest text-[#050404]">Narrator Voice Engine</label>
-                <input type="text" value={narrator} onChange={(e) => setNarrator(e.target.value)} placeholder="E.G., ECHO VOICE V2" className="w-full bg-[#f3f3f4] border-4 border-[#050404] px-4 py-3 font-bold text-[#050404] outline-none focus:bg-white rounded-[0.25rem] transition-colors" />
+                <label className="flex items-center gap-2 font-bold text-xs text-neutral-400 uppercase tracking-widest">
+                  <Mic className="w-3.5 h-3.5 text-neutral-600" />
+                  <span>Narrator Voice Engine</span>
+                </label>
+                <input type="text" value={narrator} onChange={(e) => setNarrator(e.target.value)} placeholder="E.G., ECHO VOICE V2" className="w-full bg-black/40 text-white placeholder-neutral-700 font-bold p-4 border-2 border-neutral-800 rounded-xl focus:outline-none focus:ring-0 focus:border-[#e50914] focus:bg-black transition-all uppercase tracking-wide text-sm" />
               </div>
 
               <div className="space-y-2">
-                <label className="block font-black text-xs uppercase tracking-widest text-[#050404]">Audiobook Duration</label>
-                <input type="text" value={duration} onChange={(e) => setDuration(e.target.value)} placeholder="E.G., 5H 45M" className="w-full bg-[#f3f3f4] border-4 border-[#050404] px-4 py-3 font-bold text-[#050404] outline-none focus:bg-white rounded-[0.25rem] transition-colors" />
+                <label className="flex items-center gap-2 font-bold text-xs text-neutral-400 uppercase tracking-widest">
+                  <Clock className="w-3.5 h-3.5 text-neutral-600" />
+                  <span>Audiobook Duration</span>
+                </label>
+                <input type="text" value={duration} onChange={(e) => setDuration(e.target.value)} placeholder="E.G., 5H 45M" className="w-full bg-black/40 text-white placeholder-neutral-700 font-bold p-4 border-2 border-neutral-800 rounded-xl focus:outline-none focus:ring-0 focus:border-[#e50914] focus:bg-black transition-all uppercase tracking-wide text-sm" />
               </div>
             </div>
 
-            {/* NEW: Local Image Upload Field */}
-            <div className="space-y-2">
-              <label className="block font-black text-xs uppercase tracking-widest text-[#050404]">
-                Cover Art Image (Local File)
+            {/* Artwork Capture Nodes */}
+            <div className="space-y-3">
+              <label className="flex items-center gap-2 font-bold text-xs text-neutral-400 uppercase tracking-widest">
+                <ImageIcon className="w-3.5 h-3.5 text-neutral-600" />
+                <span>Cover Art Image (Local File)</span>
               </label>
-              <div className="flex items-center gap-4">
+              <div className="flex flex-col sm:flex-row items-center gap-6 bg-black/30 p-5 rounded-xl border border-white/5">
                 {coverPreview ? (
-                  <img src={coverPreview} alt="Cover Preview" className="h-16 w-16 object-cover border-4 border-[#050404] rounded-[0.125rem] flex-shrink-0" />
+                  <img src={coverPreview} alt="Cover Preview" className="h-20 w-16 object-cover rounded-md border border-white/10 shadow-lg flex-shrink-0" />
                 ) : (
-                  <div className="h-16 w-16 bg-[#f3f3f4] border-4 border-dashed border-[#050404] rounded-[0.125rem] flex items-center justify-center flex-shrink-0">
-                    <ImageIcon className="h-6 w-6 text-[#050404]" />
+                  <div className="h-20 w-16 bg-neutral-900 border border-neutral-800 rounded-md flex items-center justify-center flex-shrink-0 text-neutral-600">
+                    <ImageIcon className="h-6 w-6" />
                   </div>
                 )}
-                <input 
-                  type="file" 
-                  accept="image/*"
-                  onChange={handleImageChange}
-                  className="w-full bg-[#f3f3f4] border-4 border-[#050404] px-4 py-3 font-bold text-[#050404] outline-none focus:bg-white rounded-[0.25rem] transition-colors file:mr-4 file:py-2 file:px-4 file:rounded-[0.125rem] file:border-2 file:border-[#050404] file:text-xs file:font-black file:uppercase file:bg-[#FEBB0F] file:text-[#050404] hover:file:bg-[#050404] hover:file:text-white cursor-pointer"
-                />
+                <div className="relative w-full flex items-center gap-4">
+                  <input 
+                    type="file" 
+                    accept="image/*"
+                    onChange={handleImageChange}
+                    id="cover-file-upload"
+                    className="hidden"
+                  />
+                  <label
+                    htmlFor="cover-file-upload"
+                    className="bg-neutral-800 hover:bg-neutral-700 text-white text-xs font-bold uppercase tracking-widest px-4 py-3 rounded-md cursor-pointer transition-colors shadow-md flex-shrink-0"
+                  >
+                    Choose Image File
+                  </label>
+                  <span className="text-xs text-neutral-500 uppercase tracking-wider truncate max-w-xs">
+                    {coverFile ? coverFile.name : 'No image chosen'}
+                  </span>
+                </div>
               </div>
             </div>
 
-            {/* Drag and Drop Audio File Picker */}
-            <div className="space-y-2">
-              <label className="block font-black text-xs uppercase tracking-widest text-[#050404]">
-                Audio Media (Local File) *
+            {/* Drag and Drop Binary Audio Dropzone */}
+            <div className="space-y-3">
+              <label className="flex items-center gap-2 font-bold text-xs text-neutral-400 uppercase tracking-widest">
+                <Film className="w-3.5 h-3.5 text-neutral-600" />
+                <span>Audio Media (Local File) *</span>
               </label>
-              <div className="relative w-full bg-[#f3f3f4] border-4 border-dashed border-[#050404] hover:bg-zinc-50 transition-colors rounded-[0.25rem] p-6 text-center flex flex-col items-center justify-center group cursor-pointer">
+              <div className="group relative w-full bg-black/40 border-2 border-neutral-800 border-dashed rounded-2xl p-10 flex flex-col items-center justify-center text-center cursor-pointer hover:border-[#e50914]/50 transition-all duration-300">
                 <input 
                   type="file"
                   accept=".mp3,audio/mpeg,audio/mp3,.wav,audio/wav,audio/x-wav"
                   onChange={handleAudioChange}
                   className="absolute inset-0 opacity-0 cursor-pointer z-20"
                 />
-                <UploadCloud className="h-10 w-10 text-[#050404] mb-2 group-hover:text-[#B70504] transition-colors" />
-                <p className="font-bold text-sm text-[#050404]">
+                <div className="p-4 bg-neutral-900 rounded-full text-neutral-500 group-hover:text-[#e50914] group-hover:bg-neutral-900/50 transition-all duration-300 shadow-xl">
+                  <UploadCloud className="h-8 w-8" />
+                </div>
+                <p className="mt-4 font-bold text-sm text-neutral-200 tracking-wide uppercase">
                   {audioFile ? `SELECTED: ${audioFile.name.toUpperCase()}` : 'DRAG AND DROP OR CLICK TO BROWSE LOCAL AUDIO'}
                 </p>
-                <p className="text-[10px] text-zinc-500 font-bold tracking-wider mt-1 uppercase">
+                <p className="mt-1 text-[11px] text-neutral-500 font-bold tracking-widest uppercase">
                   FILE WILL STREAM DIRECTLY TO CLOUDINARY GLOBAL EDGE NETWORK
                 </p>
               </div>
             </div>
 
+            {/* Target Category Select Menu (Synced precisely to your current database) */}
             <div className="space-y-2">
-              <label className="block font-black text-xs uppercase tracking-widest text-[#050404]">Target Category Genre Mapping *</label>
+              <label className="flex items-center gap-2 font-bold text-xs text-neutral-400 uppercase tracking-widest">
+                <span>Target Category Genre Mapping *</span>
+              </label>
               <div className="relative">
-                <select value={genreSlug} onChange={(e) => setGenreSlug(e.target.value)} className="w-full bg-[#f3f3f4] border-4 border-[#050404] px-4 py-3 font-bold text-[#050404] outline-none focus:bg-white rounded-[0.25rem] appearance-none cursor-pointer">
-                  <option value="sci-fi-fantasy">Sci-Fi & Fantasy</option>
-                  <option value="biographies-memoirs">Biographies & Memoirs</option>
-                  <option value="children">Children</option>
-                  <option value="business-money">Business & Money</option>
-                  <option value="self-development">Self-Development</option>
+                <select 
+                  value={genreSlug} 
+                  onChange={(e) => setGenreSlug(e.target.value)} 
+                  className="w-full bg-black/40 text-white font-bold p-4 border-2 border-neutral-800 rounded-xl focus:outline-none focus:ring-0 focus:border-[#e50914] focus:bg-black transition-all appearance-none cursor-pointer uppercase tracking-wide text-sm"
+                >
+                  <optgroup label="Fiction Categories">
+                    <option value="fantasy">Fantasy</option>
+                    <option value="science-fiction">Science Fiction</option>
+                    <option value="mystery-crime">Mystery & Crime</option>
+                    <option value="romance">Romance</option>
+                    <option value="thriller-suspense">Thriller & Suspense</option>
+                    <option value="historical-fiction">Historical Fiction</option>
+                    <option value="horror">Horror</option>
+                    <option value="literary-fiction">Literary Fiction</option>
+                  </optgroup>
+                  
+                  <optgroup label="Nonfiction Categories">
+                    <option value="biography-autobiography">Biography & Autobiography</option>
+                    <option value="memoir">Memoir</option>
+                    <option value="self-help">Self-Help</option>
+                    <option value="history">History</option>
+                    <option value="essays-poetry">Essays & Poetry</option>
+                  </optgroup>
                 </select>
-                <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-4 text-[#050404]">
-                  <svg className="fill-current h-4 w-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20"><path d="M9.293 12.95l.707.707L15.657 8l-1.414-1.414L10 10.828 5.757 6.586 4.343 8z" /></svg>
+                <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-4 text-neutral-500">
+                  <svg className="fill-current h-4 w-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20">
+                    <path d="M9.293 12.95l.707.707L15.657 8l-1.414-1.414L10 10.828 5.757 6.586 4.343 8z" />
+                  </svg>
                 </div>
               </div>
             </div>
 
             <div className="space-y-2">
-              <label className="block font-black text-xs uppercase tracking-widest text-[#050404]">Book Summary / Description</label>
-              <textarea rows="4" value={description} onChange={(e) => setDescription(e.target.value)} placeholder="PROVIDE A BRIEF NARRATIVE SUMMARY" className="w-full bg-[#f3f3f4] border-4 border-[#050404] px-4 py-3 font-bold text-[#050404] outline-none focus:bg-white rounded-[0.25rem] resize-none transition-colors" />
+              <label className="flex items-center gap-2 font-bold text-xs text-neutral-400 uppercase tracking-widest">
+                <FileText className="w-3.5 h-3.5 text-neutral-600" />
+                <span>Book Summary / Description</span>
+              </label>
+              <textarea rows="4" value={description} onChange={(e) => setDescription(e.target.value)} placeholder="PROVIDE A BRIEF NARRATIVE SUMMARY" className="w-full bg-black/40 text-white placeholder-neutral-700 font-bold p-4 border-2 border-neutral-800 rounded-xl focus:outline-none focus:ring-0 focus:border-[#e50914] focus:bg-black transition-all uppercase tracking-wide text-sm resize-none min-h-[120px]" />
             </div>
 
-            <button type="submit" disabled={publishing} className="w-full bg-[#B70504] hover:bg-[#050404] text-white border-4 border-[#050404] font-['Hanken_Grotesk'] font-black text-sm uppercase tracking-widest py-4 rounded-[0.25rem] flex items-center justify-center gap-2 transition-colors disabled:opacity-40">
-              <span>{publishing ? 'STREAMING ASSETS TO CLOUDINARY...' : 'Publish Audiobook'}</span>
-            </button>
+            {/* Execution Trigger Button */}
+            <div className="pt-4 border-t border-white/5 flex justify-end">
+              <button 
+                type="submit" 
+                disabled={publishing} 
+                className="bg-[#e50914] hover:bg-[#b81d24] text-white font-bold text-sm uppercase tracking-wider px-10 py-4 rounded-md transition-all hover:scale-[1.02] active:scale-95 disabled:opacity-40 min-w-[240px] flex items-center justify-center gap-2 shadow-[0_4px_20px_rgba(229,9,20,0.25)]"
+              >
+                <span>{publishing ? 'STREAMING ASSETS...' : 'Publish Audiobook'}</span>
+              </button>
+            </div>
           </form>
-        </div>
+        </motion.div>
       </main>
     </div>
   )
