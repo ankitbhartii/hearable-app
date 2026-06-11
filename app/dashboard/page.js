@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useRef, memo, useMemo } from 'react'
 import { createClient } from '../utils/supabase/client'
-import { LogOut, ArrowRight, Play, Pause, ChevronLeft, ChevronRight, Trash2, Volume2, VolumeX, Search, Bookmark, Info, ListOrdered, Heart, Share2, Star } from 'lucide-react'
+import { LogOut, ArrowRight, Play, Pause, ChevronLeft, ChevronRight, Trash2, Volume2, VolumeX, Search, Bookmark, Info, ListOrdered, Heart, Share2, Star, Film } from 'lucide-react'
 import { useRouter } from 'next/navigation'
 import { motion, AnimatePresence } from 'framer-motion'
 import Loader from '../Loader'
@@ -289,40 +289,8 @@ export default function Dashboard() {
     } catch (err) {}
   }
 
-  const handleTrackCardSelect = async (book) => {
-    setActiveBookContext(book)
-    setIsPlayerExpanded(true)
-    trackRecentBook(book.id) 
-
-    setRatingValue(0)
-    setRatingHover(0)
-    setCommentText('')
-
-    try {
-      // Fetch Chapters
-      const { data: chapData, error: chapError } = await supabase.from('chapters').select('*').eq('book_id', book.id).order('chapter_number', { ascending: true })
-      if (chapError) throw chapError
-
-      if (chapData && chapData.length > 0) {
-        setBookChapters(chapData)
-        if (!currentActiveChapter || currentActiveChapter.book_id !== book.id) setCurrentActiveChapter(chapData[0])
-      } else if (book.audio_url && book.audio_url !== 'EPISODIC_SERIES') {
-        const standaloneVirtualChapter = { id: book.id, book_id: book.id, chapter_number: 1, title: 'Complete Audio', audio_url: book.audio_url, duration: 'FULL TRACK' }
-        setBookChapters([standaloneVirtualChapter])
-        if (!currentActiveChapter || currentActiveChapter.id !== book.id) setCurrentActiveChapter(standaloneVirtualChapter)
-      } else setBookChapters([])
-
-      // Fetch Reviews
-      const { data: reviewsData, error: reviewError } = await supabase.from('reviews').select('*').eq('book_id', book.id).order('created_at', { ascending: false })
-      if (!reviewError && reviewsData) {
-        setBookReviews(reviewsData)
-        const myReview = reviewsData.find(r => r.user_id === userId)
-        if (myReview) {
-          setRatingValue(myReview.rating)
-          setCommentText(myReview.comment_text || '')
-        }
-      }
-    } catch (err) {}
+  const handleTrackCardSelect = (book) => {
+    router.push(`/player?id=${book.id}`)
   }
 
   const handlePlayFromMainCard = (book) => {
@@ -375,7 +343,7 @@ export default function Dashboard() {
   if (loading) return <div className="min-h-screen bg-[#141414] flex items-center justify-center p-6"><Loader /></div>
 
   return (
-    <div className="min-h-screen bg-[#141414] text-white font-['Hanken_Grotesk'] antialiased pb-40 select-none transition-colors duration-300 overflow-x-hidden">
+    <div className="min-h-screen bg-[#141414] text-white font-['Hanken_Grotesk',sans-serif] antialiased pb-40 select-none transition-colors duration-300 overflow-x-hidden">
       <style jsx global>{`
         @import url('https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@400;500;600;700;800;900&display=swap');
         .thick-scrubber::-webkit-slider-thumb { appearance: none; width: 14px; height: 14px; border-radius: 50%; background: #e50914; cursor: pointer; transition: transform 0.1s ease; }
@@ -405,17 +373,44 @@ export default function Dashboard() {
         <div className="flex items-center gap-8 w-full md:w-auto justify-between md:justify-start">
           <div className="flex items-center gap-2 cursor-pointer select-none" onClick={() => { setActiveView('catalog'); setSearchQuery(''); }}>
             <span className="text-[#e50914] text-2xl md:text-3xl font-[900] tracking-tighter antialiased">HEARABLE</span>
-            <span className="bg-[#e50914] text-white text-[8px] font-[900] px-1.5 py-0.5 rounded-sm ml-1 tracking-widest uppercase">V4.5 (SOCIAL)</span>
+            <span className="bg-[#e50914] text-white text-[8px] font-[900] px-1.5 py-0.5 rounded-sm ml-1 tracking-widest uppercase">V5.0</span>
           </div>
           <button onClick={handleLogout} className="md:hidden flex items-center justify-center p-2 border border-white/10 rounded-md text-neutral-400 hover:text-white"><LogOut className="h-4 w-4" /></button>
         </div>
         <div className="flex items-center justify-between md:justify-end gap-6 w-full md:w-auto">
+          
+          {/* Navigation Links */}
           <div className="flex items-center gap-5 text-[13px] font-medium text-neutral-300 transition-colors">
-            <button onClick={() => { setActiveView('catalog'); setSearchQuery(''); }} className={`hover:text-neutral-400 transition-colors ${activeView === 'catalog' && searchQuery === '' ? 'text-white font-bold' : ''}`}>Home</button>
-            <button onClick={() => { setActiveView('library'); setSearchQuery(''); }} className={`hover:text-neutral-400 transition-colors ${activeView === 'library' ? 'text-white font-bold' : ''}`}>My List</button>
+            <button 
+              onClick={() => { setActiveView('catalog'); setSearchQuery(''); }} 
+              className={`hover:text-neutral-400 transition-colors ${activeView === 'catalog' && searchQuery === '' ? 'text-white font-bold' : ''}`}
+            >
+              Home
+            </button>
+
+            {/* NEW SHORTS BUTTON */}
+            <button 
+              onClick={() => router.push('/shorts')} 
+              className="hover:text-white transition-colors flex items-center gap-1.5 group"
+            >
+              <div className="relative flex h-2 w-2">
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[#e50914] opacity-75"></span>
+                <span className="relative inline-flex rounded-full h-2 w-2 bg-[#e50914]"></span>
+              </div>
+              <Film className="h-4 w-4 group-hover:scale-110 transition-transform" />
+              <span>Shorts</span>
+            </button>
+
+            <button 
+              onClick={() => { setActiveView('library'); setSearchQuery(''); }} 
+              className={`hover:text-neutral-400 transition-colors ${activeView === 'library' ? 'text-white font-bold' : ''}`}
+            >
+              My List
+            </button>
             <button onClick={() => router.push('/profile')} className="hover:text-neutral-400 transition-colors">Profile</button>
             <button onClick={() => router.push('/admin')} className="text-[#e50914] font-bold hover:text-[#b81d24] transition-colors">Upload</button>
           </div>
+
           <div className="relative flex items-center bg-black/60 border border-white/20 rounded-md px-3 py-1.5 backdrop-blur-md max-w-[180px] md:max-w-xs group">
             <Search className="h-4 w-4 text-neutral-400 group-focus-within:text-[#e50914] transition-colors mr-2" />
             <input type="text" value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} placeholder="Titles, authors..." className="bg-transparent text-white placeholder-neutral-500 font-medium text-xs outline-none w-full" />
