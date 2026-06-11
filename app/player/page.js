@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useRef, useState, Suspense } from 'react'
 import { createClient } from '../utils/supabase/client'
 import { useRouter, useSearchParams } from 'next/navigation'
 import {
@@ -33,7 +33,7 @@ const clampChannel = (value) => Math.max(0, Math.min(255, Math.round(value)))
 const mixColors = (left, right, ratio) => left.map((value, index) => clampChannel(value * (1 - ratio) + right[index] * ratio))
 const rgbValue = (color) => color.map(clampChannel).join(', ')
 
-export default function DedicatedPlayerPage() {
+function PlayerContent() {
   const supabase = createClient()
   const router = useRouter()
   const searchParams = useSearchParams()
@@ -106,7 +106,7 @@ export default function DedicatedPlayerPage() {
             duration: 'FULL TRACK'
           }
           setBookChapters([standalone])
-          setCurrentActiveChapter(standalone)
+          setCurrentActiveChapter([standalone])
         }
 
         const { data: reviewsData } = await supabase.from('reviews').select('*').eq('book_id', bookId).order('created_at', { ascending: false })
@@ -947,5 +947,17 @@ export default function DedicatedPlayerPage() {
         </motion.div>
       )}
     </div>
+  )
+}
+
+export default function DedicatedPlayerPage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen flex items-center justify-center" style={{ backgroundColor: "#052d31" }}>
+        <Loader />
+      </div>
+    }>
+      <PlayerContent />
+    </Suspense>
   )
 }
